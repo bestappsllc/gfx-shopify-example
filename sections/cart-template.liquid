@@ -34,6 +34,12 @@
         Loop through products in the cart
       {% endcomment %}
       {% for item in cart.items %}
+
+        {% assign designNumber = false %}
+        {% assign gfxThumbUrlFront = false %}
+        {% assign gfxThumbUrlBack = false %}
+        {% assign bestAppsAPI = 'https://valabxq1o3.execute-api.us-west-2.amazonaws.com/gfx-core-production/api/v1/public' %}
+
         <div class="cart__row">
           <div class="grid--full cart__row--table-large">
 
@@ -42,34 +48,73 @@
 
                 <div class="grid__item one-third">
                   <a href="{{ item.url }}">
-                    {% unless item.image == blank %}
-                      {% capture img_id %}ProductImage-{{ item.id }}{% endcapture %}
-                      {% capture wrapper_id %}ProductImageWrapper-{{ item.id }}{% endcapture %}
-                      {%- assign img_url = item.image | img_url: '1x1' | replace: '_1x1.', '_{width}x.' -%}
-                      {% include 'image-style' with image: item.image, width: 210, height: 245, wrapper_id: wrapper_id, img_id: img_id %}
-                      <div id="{{ wrapper_id }}" class="cart__image-wrapper supports-js">
-                        <div style="padding-top:{{ 1 | divided_by: item.image.aspect_ratio | times: 100}}%;">
-                          <img id="{{ img_id }}"
-                               class="cart__image lazyload"
-                               data-src="{{ img_url }}"
-                               data-widths="[40, 65, 90, 120, 150, 180, 360, 480, 600]"
-                               data-aspectratio="{{ item.image.aspect_ratio }}"
-                               data-sizes="auto"
-                               alt="{{ item.title | escape }}">
-                        </div>
-                      </div>
-                    {% else %}
-                      <p><img src="{{ item | img_url: 'medium' }}" alt="{{ item.title | escape }}"></p>
-                    {% endunless %}
+                    {% capture img_id %}ProductImage-{{ item.id }}{% endcapture %}
+                    {% capture wrapper_id %}ProductImageWrapper-{{ item.id }}{% endcapture %}
+                    {%- assign img_url = item.image | img_url: '1x1' | replace: '_1x1.', '_{width}x.' -%}
+                    {% include 'image-style' with image: item.image, width: 210, height: 245, wrapper_id: wrapper_id, img_id: img_id %}
+                    <div id="{{ wrapper_id }}" class="cart__image-wrapper supports-js">
 
-                    <noscript>
-                      <p><img src="{{ item | img_url: 'medium' }}" alt="{{ item.title | escape }}"></p>
-                    </noscript>
+
+
+                      {% for property in item.properties %}
+                        {% unless property.last == blank %}
+                          {% if property.first == "_design_number" %}
+                            {% assign designNumber = property.last %}
+                            {% assign gfxThumbUrlFront = bestAppsAPI | append: "/image/embedded/" | append: property.last | append: "/front" %}
+                          {% endif %}
+                          {% if property.first == "_gfx_sides" and property.last == '2' %}
+                            {% assign gfxThumbUrlBack = bestAppsAPI | append: "/image/embedded/" | append: designNumber | append: "/back" %}
+                          {% endif %}
+                        {% endunless %}
+                      {% endfor %}
+                      {% assign gfxItemUrl = item.url | append: "&" | append: "design_number=" | append: designNumber %}
+
+                      {% if designNumber %}
+
+                        <input type="text" id="_design_number" style="display: none" value="embedded" name="attributes[app_flow]" />
+
+                        <a href="{{ gfxItemUrl }}" class="image-wrap gfx-cart-item {% if gfxThumbUrlFront and gfxThumbUrlBack %}gfx-double-sided{% endif %}" style="display: block; height: 0;">
+                          <img class="cart__image gfx-front-thumbnail"
+                               src="{{ gfxThumbUrlFront }}"
+                               alt="{{ item.title | escape }}"
+                               data-item-url="{{ gfxItemUrl }}">
+
+                          {% if gfxThumbUrlBack %}
+                            <img class="cart__image gfx-back-thumbnail"
+                                 src="{{ gfxThumbUrlBack }}"
+                                 alt="{{ item.title | escape }}"
+                                 data-item-url="{{ gfxItemUrl }}">
+                          {% endif %}
+                        </a>
+                      {% else %}
+                        {% unless item.image == blank %}
+                          <div style="padding-top:{{ 1 | divided_by: item.image.aspect_ratio | times: 100}}%;">
+                            <img id="{{ img_id }}"
+                                 class="cart__image lazyload"
+                                 data-src="{{ img_url }}"
+                                 data-widths="[40, 65, 90, 120, 150, 180, 360, 480, 600]"
+                                 data-aspectratio="{{ item.image.aspect_ratio }}"
+                                 data-sizes="auto"
+                                 alt="{{ item.title | escape }}">
+                          </div>
+                        {% else %}
+                          <p><img src="{{ item | img_url: 'medium' }}" alt="{{ item.title | escape }}"></p>
+                        {% endunless %}
+
+                        <noscript>
+                          <p><img src="{{ item | img_url: 'medium' }}" alt="{{ item.title | escape }}"></p>
+                        </noscript>
+
+                      {% endif %}
+
+
+                    </div>
+
                   </a>
                 </div>
 
                 <div class="grid__item two-thirds">
-                  <a href="{{ item.url }}" class="h5 cart__product-title">
+                  <a href="{{ gfxItemUrl }}" class="h5 cart__product-title">
                     {{ item.product.title }}
                   </a>
                   {% unless item.product.has_only_default_variant %}

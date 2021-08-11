@@ -36,6 +36,15 @@
 
   <div class="product-single">
     <div class="grid product-single__hero">
+
+
+      {% if product.metafields.gfx.gfx_template_id == 829 %}
+        <div class="grid__item post-large--one-half">
+          <div style="padding-top: 125.25%; position: relative;">
+            <div id="gfx-product" style="position: absolute; top: 0; left: 0; height: 100%; width: 100%;"></div>
+          </div>
+        </div>
+      {% else %}
       <div class="grid__item post-large--one-half">
 
         {% if section.settings.product_thumbnails_position == 'below' or product.images.size < 2 %}
@@ -135,7 +144,6 @@
           </div>
 
         {% endif %}
-
         {% if section.settings.product_image_zoom_type == 'lightbox' %}
         <ul class="gallery" class="hidden">
           {% for image in product.images %}
@@ -145,6 +153,8 @@
         {% endif %}
 
       </div>
+      {% endif %}
+
       <div class="grid__item post-large--one-half">
         {% if section.settings.product_vendor_enable %}
           <span class="h3" itemprop="brand">{{ product.vendor }}</span>
@@ -190,7 +200,13 @@
             </div>
           {%- endif -%}
 
+
           {% form 'product', product, class: productform_class %}
+
+            {% if product.metafields.gfx.gfx_template_id == 829 %}
+              {% include 'gfx-editor', product: product %}
+            {% endif %}
+
             {{ form | payment_terms }}
             <select name="id" id="ProductSelect-{{ section.id }}" class="product-single__variants">
               {% for variant in product.variants %}
@@ -214,6 +230,7 @@
             <button type="submit" name="add" id="AddToCart" class="btn {{ btn_class }}{% if section.settings.enable_payment_button and product.selling_plan_groups == empty %} btn--secondary{% endif %}">
               <span id="AddToCartText">{{ 'products.product.add_to_cart' | t }}</span>
             </button>
+
             {% if section.settings.enable_payment_button %}
               {{ form | payment_button }}
             {% endif %}
